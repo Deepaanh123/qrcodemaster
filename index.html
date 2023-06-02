@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jscolor-picker@2.3.5/jscolor.min.css">
+    <style>
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_TRACKING_ID"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'YOUR_GA_TRACKING_ID');
+</script>
+
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="w-full md:w-1/2 lg:w-1/3 p-4">
+        <h1 class="text-3xl font-bold mb-4 text-center">QR Code Generator</h1>
+
+        <div id="fields" class="mb-6">
+            <div class="flex items-center mb-4">
+                <input type="text" placeholder="Field Name" class="w-1/2 mr-4 border border-gray-300 rounded px-4 py-2">
+                <input type="text" placeholder="Field Data" class="w-1/2 mr-4 border border-gray-300 rounded px-4 py-2">
+                <button onclick="addField()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">+</button>
+            </div>
+        </div>
+
+        <button onclick="generateQRCode()" class="w-full px-6 py-3 bg-green-500 text-white rounded-lg mb-4">Generate QR Code</button>
+
+        <div id="qr-code-settings" class="mb-6">
+            <h2 class="text-xl font-bold mb-2">QR Code Settings</h2>
+            <div class="flex items-center mb-2">
+                <label for="bg-color-picker" class="mr-4">Background Color:</label>
+                <input type="color" id="bg-color-picker" onchange="updateQRCodeSettings()" class="w-1/2 border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div class="flex items-center">
+                <label for="fg-color-picker" class="mr-4">Foreground Color:</label>
+                <input type="color" id="fg-color-picker" onchange="updateQRCodeSettings()" class="w-1/2 border border-gray-300 rounded px-4 py-2">
+            </div>
+        </div>
+
+        <div id="qrcode" class="w-full h-auto mb-6"></div>
+
+        <div id="download-buttons" class="flex">
+            <button onclick="downloadQRCode('png')" class="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg mr-4">Download as PNG</button>
+            <button onclick="downloadQRCode('jpeg')" class="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg">Download as JPEG</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jscolor-picker@2.3.5/jscolor.min.js"></script>
+    <script>
+        let fieldsCount = 1;
+        let fields = {};
+        let qrCodeSettings = {
+            backgroundColor: '#ffffff',
+            foregroundColor: '#000000'
+        };
+
+        function addField() {
+            const fieldContainer = document.getElementById('fields');
+            const newField = document.createElement('div');
+            newField.classList.add('flex', 'items-center', 'mb-4', 'animate-fade-in');
+            newField.innerHTML = `
+                <input type="text" placeholder="Field Name" class="w-1/2 mr-4 border border-gray-300 rounded px-4 py-2">
+                <input type="text" placeholder="Field Data" class="w-1/2 mr-4 border border-gray-300 rounded px-4 py-2">
+                <button onclick="removeField(this)" class="px-4 py-2 bg-red-500 text-white rounded-lg">-</button>
+            `;
+            fieldContainer.appendChild(newField);
+            fieldsCount++;
+        }
+
+        function removeField(field) {
+            field.parentNode.remove();
+        }
+
+        function generateQRCode() {
+            const qrCodeContainer = document.getElementById('qrcode');
+            qrCodeContainer.innerHTML = '';
+
+            const qrCode = new QRCode(qrCodeContainer, {
+                width: 256,
+                height: 256,
+                colorDark: qrCodeSettings.foregroundColor,
+                colorLight: qrCodeSettings.backgroundColor,
+            });
+
+            const inputs = document.querySelectorAll('#fields input');
+            fields = {};
+
+            inputs.forEach((input, index) => {
+                if (index % 2 === 0) {
+                    const fieldName = input.value;
+                    const fieldData = inputs[index + 1].value;
+                    fields[fieldName] = fieldData;
+                }
+            });
+
+            qrCode.makeCode(JSON.stringify(fields));
+        }
+
+        function downloadQRCode(format) {
+            const qrCodeContainer = document.getElementById('qrcode');
+
+            html2canvas(qrCodeContainer).then(canvas => {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL(`image/${format}`);
+                link.download = `qrcode.${format}`;
+                link.click();
+            });
+        }
+
+        function updateQRCodeSettings() {
+            const bgColorPicker = document.getElementById('bg-color-picker');
+            const fgColorPicker = document.getElementById('fg-color-picker');
+
+            qrCodeSettings.backgroundColor = bgColorPicker.value;
+            qrCodeSettings.foregroundColor = fgColorPicker.value;
+
+            generateQRCode();
+        }
+    </script>
+</body>
+</html>
